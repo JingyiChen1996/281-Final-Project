@@ -1,0 +1,269 @@
+---
+title: "281_final"
+author: "Jingyi Chen"
+date: "April 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+GSM3414760 ER-a_MCF7_TET2_WT_DMSO 
+https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM3414760
+
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+fastq-dump SRR7952634
+fastq-dump SRR7952635
+fastq-dump SRR7952636
+fastq-dump SRR7952637
+
+#map 
+module load bwa/0.7.15-fasrc02
+bwa mem /n/stat115/HW2_2019/bwa_hg38_index/hg38.fasta ./SRR7952634.fastq > ./SRR7952634.sam
+
+#check mapping result
+module load samtools
+samtools flagstat SRR7952634.sam
+samtools view -bq 1 SRR7952634.sam > unique_SRR7952634.bam
+samtools flagstat unique_SRR7952634.bam
+
+#merge 4 runs together
+samtools merge GSM3414760.bam unique_SRR7952634.bam unique_SRR7952635.bam unique_SRR7952636.bam unique_SRR7952637.bam
+
+#check redundance rate (0.07)
+module load macs2/2.1.1.20160309-fasrc02
+macs2 filterdup -i GSM3414760.bam -g hs --keep-dup 1 -o ./GSM3414760.bed
+macs2 callpeak -t GSM3414760.bed -f AUTO -g 2.7e9 -q 0.05 --fe-cutoff 5 --outdir ./GSM3414760/ -n GSM3414760
+
+```
+
+NOE2-TET2-GSM3414775
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+fastq-dump SRR7952697	
+fastq-dump SRR7952696	
+fastq-dump SRR7952695	
+fastq-dump SRR7952694	
+
+#map 
+module load bwa/0.7.15-fasrc02
+bwa mem /n/stat115/HW2_2019/bwa_hg38_index/hg38.fasta ./SRR7952697.fastq > ./SRR7952697.sam
+
+#check mapping result
+module load samtools
+samtools flagstat SRR7952694.sam
+samtools view -bq 1 SRR7952694.sam > unique_SRR7952694.bam
+samtools flagstat unique_SRR7952694.bam
+
+#map rate: 
+#94:97.33% 96:96.89% 95:97.31% 97:96.93%
+
+#merge 4 runs together
+samtools merge GSM3414775.bam unique_SRR7952694.bam unique_SRR7952695.bam unique_SRR7952696.bam unique_SRR7952697.bam
+
+#check redundance rate (0.13)
+module load macs2/2.1.1.20160309-fasrc02
+macs2 filterdup -i GSM3414775.bam -g hs --keep-dup 1 -o ./GSM3414775.bed
+macs2 callpeak -t GSM3414775.bed -f AUTO -g 2.7e9 -q 0.05 --fe-cutoff 5 --outdir ./GSM3414775/ -n GSM3414775
+
+```
+
+GSM3414775_summits.bed
+
+E2-TET2-GSM3414769
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+fastq-dump SRR7952673	
+fastq-dump SRR7952672	
+fastq-dump SRR7952671	
+fastq-dump SRR7952670	
+
+#map 
+module load bwa/0.7.15-fasrc02
+bwa mem /n/stat115/HW2_2019/bwa_hg38_index/hg38.fasta ./SRR7952673.fastq > ./SRR7952673.sam
+
+#check mapping result
+module load samtools
+samtools flagstat SRR7952672.sam
+samtools view -bq 1 SRR7952672.sam > unique_SRR7952672.bam
+samtools flagstat unique_SRR7952672.bam
+
+#map rate: 
+#73:98.61% 72:98.63% 71:98.44% 70:98.39%
+
+#merge 4 runs together
+samtools merge GSM3414769.bam unique_SRR7952673.bam unique_SRR7952672.bam unique_SRR7952671.bam unique_SRR7952670.bam
+
+#check redundance rate (0.09)
+module load macs2/2.1.1.20160309-fasrc02
+macs2 filterdup -i GSM3414769.bam -g hs --keep-dup 1 -o ./GSM3414769.bed
+macs2 callpeak -t GSM3414769.bed -f AUTO -g 2.7e9 -q 0.05 --fe-cutoff 5 --outdir ./GSM3414769/ -n GSM3414769
+
+```
+
+GSM3414769_summits.bed
+
+NOE2-PR-GSM1669090
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+fastq-dump SRR2000840	
+fastq-dump SRR2000839	
+
+#map 
+module load bwa/0.7.15-fasrc02
+bwa mem /n/stat115/HW2_2019/bwa_hg38_index/hg38.fasta ./SRR2000840.fastq > ./SRR2000840.sam
+#map rate: 
+#40:97.84% 39:97.90% 
+
+#check mapping result
+module load samtools
+samtools flagstat SRR2000840.sam
+samtools view -bq 1 SRR2000840.sam > unique_SRR2000840.bam
+samtools flagstat unique_SRR2000840.bam
+samtools flagstat SRR2000839.sam
+samtools view -bq 1 SRR2000839.sam > unique_SRR2000839.bam
+samtools flagstat unique_SRR2000839.bam
+
+#merge 4 runs together
+samtools merge GSM1669090.bam unique_SRR2000840.bam unique_SRR2000839.bam 
+           
+#check redundance rate (0.06)
+module load macs2/2.1.1.20160309-fasrc02
+macs2 filterdup -i GSM1669090.bam -g hs --keep-dup 1 -o ./GSM1669090.bed
+macs2 callpeak -t GSM1669090.bed -f AUTO -g 2.7e9 -q 0.05 --fe-cutoff 5 --outdir ./GSM1669090/ -n GSM1669090
+
+```
+
+E2-PR-GSM1669091
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+fastq-dump SRR2000842	
+fastq-dump SRR2000841	
+
+#map 
+module load bwa/0.7.15-fasrc02
+bwa mem /n/stat115/HW2_2019/bwa_hg38_index/hg38.fasta ./SRR2000842.fastq > ./SRR2000842.sam
+
+#check mapping result
+samtools flagstat SRR2000842.sam
+samtools view -bq 1 SRR2000842.sam > unique_SRR2000842.bam
+samtools flagstat unique_SRR2000842.bam
+samtools flagstat SRR2000841.sam
+samtools view -bq 1 SRR2000841.sam > unique_SRR2000841.bam
+samtools flagstat unique_SRR2000841.bam
+#map rate: 
+#42:97.96% 41:98.01% 
+
+#merge 4 runs together
+samtools merge GSM1669091.bam unique_SRR2000842.bam unique_SRR2000841.bam
+
+#check redundance rate (0.07)
+module load macs2/2.1.1.20160309-fasrc02
+macs2 filterdup -i GSM1669091.bam -g hs --keep-dup 1 -o ./GSM1669091.bed
+macs2 callpeak -t GSM1669091.bed -f AUTO -g 2.7e9 -q 0.05 --fe-cutoff 5 --outdir ./GSM1669091/ -n GSM1669091
+
+```
+
+```{r engine='bash'}
+#call differential peaks
+macs2 callpeak -t GSM1669090.bed -c GSM3414775.bed -f AUTO -g 2.7e9 -q 0.01 --fe-cutoff 6 --outdir ./ -n no-E2
+macs2 callpeak -t GSM1669091.bed -c GSM3414769.bed -f AUTO -g 2.7e9 -q 0.01 --fe-cutoff 6 --outdir ./E2_chip -n E2
+```
+
+```{r}
+no_TET2_peak <- read.table('data/GSM3414769_peaks.narrowPeak')
+TET2_peak <- read.table('data/GSM3414769_peaks.narrowPeak')
+
+no_PR_peak <- read.table('data/GSM1669090_peaks.narrowPeak')
+PR_peak <- read.table('data/GSM1669091_peaks.narrowPeak')
+
+colnames(no_TET2_peak) <- c('chr','start','end','peak','fdr')
+colnames(TET2_peak) <- c('chr','start','end','peak','fdr')
+colnames(no_PR_peak) <- c('chr','start','end','peak','fdr')
+colnames(PR_peak) <- c('chr','start','end','peak','fdr')
+
+#no_PR <- read.delim('data/GSM1669090_peaks.txt')
+#PR <- read.delim('data/GSM1669091_peaks.txt')
+```
+
+```{r}
+# source ("https://bioconductor.org/biocLite.R")
+# biocLite("ChIPseeker")
+# biocLite("org.Mm.eg.db")
+# biocLite("TxDb.Mmusculus.UCSC.mm10.knownGene")
+# biocLite("clusterProfiler")
+# biocLite("ReactomePA")
+# biocLite("DOSE")
+
+library("ChIPseeker")
+library("org.Mm.eg.db")
+library("TxDb.Mmusculus.UCSC.mm10.knownGene")
+txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
+library("clusterProfiler")
+
+TET2 <- readPeakFile("data/GSM3414769_peaks.narrowPeak")
+covplot(TET2,chrs=c("chr17", "chr19"))   #specific chr
+promoter <- getPromoters(TxDb=txdb, upstream=3000, downstream=3000)
+tagMatrix <- getTagMatrix(TET2, windows=promoter)
+tagHeatmap(tagMatrix, xlim=c(-3000, 3000), color="red")
+plotAvgProf(tagMatrix, xlim=c(-3000, 3000), conf = 0.95, resample = 1000)
+
+peakAnno <- annotatePeak(TET2, tssRegion=c(-3000, 3000),TxDb=txdb, annoDb="org.Mm.eg.db")
+plotAnnoBar(peakAnno)
+vennpie(peakAnno)
+upsetplot(peakAnno) 
+
+no_TET2 <- readPeakFile("data/GSM3414775_peaks.narrowPeak")
+covplot(TET2,chrs=c("chr17", "chr19"))   #specific chr
+promoter <- getPromoters(TxDb=txdb, upstream=3000, downstream=3000)
+tagMatrix <- getTagMatrix(TET2, windows=promoter)
+tagHeatmap(tagMatrix, xlim=c(-3000, 3000), color="red")
+plotAvgProf(tagMatrix, xlim=c(-3000, 3000), conf = 0.95, resample = 1000)
+
+peakAnno <- annotatePeak(TET2, tssRegion=c(-3000, 3000),TxDb=txdb, annoDb="org.Mm.eg.db")
+plotAnnoBar(peakAnno)
+vennpie(peakAnno)
+upsetplot(peakAnno) 
+
+PR <- readPeakFile("data/GSM1669091_peaks.narrowPeak")
+covplot(PR,chrs=c("chr17", "chr19"))   #specific chr
+promoter <- getPromoters(TxDb=txdb, upstream=3000, downstream=3000)
+tagMatrix <- getTagMatrix(PR, windows=promoter)
+tagHeatmap(tagMatrix, xlim=c(-3000, 3000), color="red")
+plotAvgProf(tagMatrix, xlim=c(-3000, 3000), conf = 0.95, resample = 1000)
+
+peakAnno <- annotatePeak(PR, tssRegion=c(-3000, 3000),TxDb=txdb, annoDb="org.Mm.eg.db")
+plotAnnoBar(peakAnno)
+vennpie(peakAnno)
+upsetplot(peakAnno)
+
+no_PR <- readPeakFile("data/GSM1669090_peaks.narrowPeak")
+covplot(no_PR,chrs=c("chr17", "chr19"))   #specific chr
+promoter <- getPromoters(TxDb=txdb, upstream=3000, downstream=3000)
+tagMatrix <- getTagMatrix(no_PR, windows=promoter)
+tagHeatmap(tagMatrix, xlim=c(-3000, 3000), color="red")
+plotAvgProf(tagMatrix, xlim=c(-3000, 3000), conf = 0.95, resample = 1000)
+
+peakAnno <- annotatePeak(no_PR, tssRegion=c(-3000, 3000),TxDb=txdb, annoDb="org.Mm.eg.db")
+plotAnnoBar(peakAnno)
+vennpie(peakAnno)
+upsetplot(peakAnno) 
+```
+

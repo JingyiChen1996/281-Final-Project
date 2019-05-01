@@ -1,0 +1,188 @@
+---
+title: "RNA-seq analysis"
+author: "Jingyi Chen"
+date: "April 30, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(DESeq2)
+library(EnsDb.Hsapiens.v86)
+library(tximport)
+library(rjson)
+library(Seurat)
+library(dplyr)
+```
+
+NOE2
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+# GSM3414801
+fastq-dump SRR7952801	
+fastq-dump SRR7952800	
+fastq-dump SRR7952799
+fastq-dump SRR7952798
+# GSM3414802
+fastq-dump SRR7952802	
+fastq-dump SRR7952803	
+fastq-dump SRR7952804	
+fastq-dump SRR7952805
+
+#merge data from different lanes
+cat SRR7952801.fastq SRR7952800.fastq SRR7952799.fastq SRR7952798.fastq> GSM3414801.fastq
+#map 
+module load salmon
+salmon index -t /n/stat115/HW3_2019/transcriptome/Homo_sapiens.GRCh38.cdna.all.fa -i ../temp/SalmonIndex
+
+#check mapping result
+module load samtools
+salmon quant -i ../temp/SalmonIndex \
+             -l A \
+             -r SRR7952801.fastq SRR7952800.fastq SRR7952799.fastq SRR7952798.fastq\
+             -o ./Control \
+             --numBootstraps 100 \
+             -p 10 \
+             --gcBias
+             
+module load samtools
+salmon quant -i ../temp/SalmonIndex \
+             -l A \
+             -r SRR7952802.fastq SRR7952803.fastq SRR7952804.fastq SRR7952805.fastq\
+             -o ./Control2 \
+             --numBootstraps 100 \
+             -p 10 \
+             --gcBias
+```
+
+
+E2
+```{r engine='bash'}
+# Download Chip-seq raw data from SRA
+module load sratoolkit/2.8.0-fasrc01
+
+#single-ended
+#GSM1669170
+fastq-dump SRR2001056	
+fastq-dump SRR2001057	
+fastq-dump SRR2001058
+fastq-dump SRR2001059
+#GSM1669183
+fastq-dump SRR2001108	
+fastq-dump SRR2001109
+fastq-dump SRR2001110
+fastq-dump SRR2001111	
+
+#merge data from different lanes
+cat SRR7952801.fastq SRR7952800.fastq SRR7952799.fastq SRR7952798.fastq> GSM3414801.fastq
+#map 
+module load salmon
+salmon index -t /n/stat115/HW3_2019/transcriptome/Homo_sapiens.GRCh38.cdna.all.fa -i ../temp/SalmonIndex
+
+#check mapping result
+module load samtools
+salmon quant -i ./temp/SalmonIndex \
+             -l A \
+             -r SRR2001056.fastq SRR2001057.fastq SRR2001058.fastq SRR2001059.fastq\
+             -o ./E2 \
+             --numBootstraps 100 \
+             -p 10 \
+             --gcBias
+
+salmon quant -i ./temp/SalmonIndex \
+             -l A \
+             -r SRR2001108.fastq SRR2001109.fastq SRR2001110.fastq SRR2001111.fastq\
+             -o ./E2_2 \
+             --numBootstraps 100 \
+             -p 10 \
+             --gcBias
+```
+
+```{r}
+# Build index for control and mutant groups
+files <- grep("sf",list.files("data"),value=TRUE)
+condition <- c("no-E2","no-E2","E2","E2")
+names <- c("no-E2","no-E2","E2","E2")
+sampleTable <- data.frame(sampleName = files, fileName = files, condition = condition)
+
+# Add gene references according to EnsDb.Hsapiens.v86
+txdf <- transcripts(EnsDb.Hsapiens.v86, return.type="DataFrame")
+tx2gene <- as.data.frame(txdf[,c("tx_id", "gene_id")])
+
+gene = c()
+for (sf in c("nonE2.sf","nonE2_2.sf","E2.sf","E2_2.sf")){
+  con1 <- transcripts(EnsDb.Hsapiens.v86, return.type="DataFrame")
+  con1 <- as.data.frame(con1[,c("tx_id", "gene_id")])
+  con1 <- tximport(file.path("data",sf), type="salmon", ignoreTxVersion = TRUE, tx2gene = tx2gene)
+  rowname <- rownames(con1$abundance)[which.max(con1$abundance)]
+  gene <- append(gene, rowname)
+}
+gene
+```
+
+
+```{r}
+# Perform DESeq analysis
+txi <- tximport(file.path("data",files), type="salmon", ignoreTxVersion = TRUE, tx2gene = tx2gene)
+dds <- DESeqDataSetFromTximport(txi,colData=sampleTable,design=~condition)
+dds <- dds[rowSums(counts(dds)) > 1, ]
+dds <- DESeq(dds)
+res <- results(dds, alpha = 0.01)
+res <- res[complete.cases(res),]
+res <- res[order(res$padj),]
+upR <- res[(res$padj < 0.01) & (res$log2FoldChange > 0),]
+downR <- res[(res$padj < 0.01) & (res$log2FoldChange < 0),]
+nrow(upR)
+nrow(downR) 
+plotMA(res)
+
+write.csv(upR@rownames, file = "Up.csv")
+write.csv(downR@rownames, file = "Down.csv")
+
+# For transcript (no aggregate) level
+library(tximport)
+txi_transcript <- tximport(file.path("data",files), type="salmon", 
+                           txOut = TRUE, ignoreTxVersion = TRUE, tx2gene = tx2gene)
+dds_transcript <- DESeqDataSetFromTximport(txi_transcript,colData=sampleTable,design=~condition)
+dds_transcript <- dds_transcript[rowSums(counts(dds_transcript)) > 1, ]
+dds_transcript <- DESeq(dds_transcript)
+res_transcript <- results(dds_transcript, alpha = 0.01)
+res_transcript <- res_transcript[complete.cases(res_transcript),]
+res_transcript <- res_transcript[order(res_transcript$padj),]
+upR_transcript <- res_transcript[(res_transcript$padj < 0.01) & (res_transcript$log2FoldChange > 0),]
+downR_transcript <- res_transcript[(res_transcript$padj < 0.01) & (res_transcript$log2FoldChange < 0),]
+nrow(upR_transcript)
+nrow(downR_transcript)
+write.csv(upR_transcript@rownames, file = "UpTranscript.csv")
+write.csv(downR_transcript@rownames, file = "DownTranscript.csv")
+
+# For gene level (aggregate)
+library(tximport)
+txi_gene <- tximport(file.path("data",files), type="salmon", 
+                     txOut = FALSE, ignoreTxVersion = TRUE, tx2gene = tx2gene)
+dds_gene <- DESeqDataSetFromTximport(txi_gene,colData=sampleTable,design=~condition)
+dds_gene <- dds_gene[rowSums(counts(dds_gene)) > 1, ]
+dds_gene <- DESeq(dds_gene)
+res_gene <- results(dds_gene, alpha = 0.01)
+res_gene <- res_gene[complete.cases(res_gene),]
+res_gene <- res_gene[order(res_gene$padj),]
+upR_gene <- res_gene[(res_gene$padj < 0.01) & (res_gene$log2FoldChange > 0),]
+downR_gene <- res_gene[(res_gene$padj < 0.01) & (res_gene$log2FoldChange < 0),]
+nrow(upR_gene)
+nrow(downR_gene)
+write.csv(upR_gene@rownames, file = "UpGene.csv")
+write.csv(downR_gene@rownames, file = "DownGene.csv")
+
+```
+
+
+
+
+
+
