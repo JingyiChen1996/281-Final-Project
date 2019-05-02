@@ -1,0 +1,23 @@
+         ———————— No-E2:  1.TET2 chip-seq (GSM3414775_summits.bed); putative gene: putative_TET2_E2_target_genes.bed
+         |                2.PR chip-seq (GSM1669090_summits.bed); putative gene:putative_PR_E2_target_genes.bed
+         |                3.PR peaks different from TET2 (no-E2_summits.bed) ; putative gene: putative_E2_diff_target_genes.bed
+MCF7 ----|                4.PR peaks same as TET2 (same_peak_noE2.bed); putative gene: putative_E2_same_target_genes.bed
+         |
+         |
+         -------- E2:     1.TET2 chip-seq (GSM3414769_summits.bed); putative gene: putative_TET2_noE2_target_genes.bed
+                          2.PR chip-seq (GSM1669091_summits.bed); putative gene: putative_PR_noE2_target_genes.bed
+			                    3.PR peaks different from TET2 (E2_summits.bed); putative gene: putative_noE2_diff_target_genes.bed
+			                    4.PR peaks same as TET2 (same_peak_E2.bed); putative gene: putative_noE2_same_target_genes.bed
+                          
+                          
+Comparing E2 to No-E2 condition RNA-seq: 1. upregulated genes: Up.csv/UpGene.csv/UpTranscript.csv
+                                         2. downregulated genes: Down.csv/DownGene.csv/DownTranscript.csv
+
+TSS_HG38: a file that contains the transcription starting site (position) of genes in HG38 (with refseq id)   
+
+
+Common peaks between TET2 and PR are found by seeing which PR chip seq peaks appears in TET2 chip seq peaks
+# if starting site of PR peaks is within 200 kb range of a TET2 peak starting site, then we consider them to be overlapping.  
+
+
+Putative genes files contain  outputs to a file containing genes that have PR/TET2 ChIP-seq peak (in this case, stronger peak in tumor) within 3KB + / - from the transcription start site (TSS) of the gene
