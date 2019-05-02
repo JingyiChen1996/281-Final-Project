@@ -1,0 +1,7 @@
+
+         ———————— No-E2:  1.TET2 chip-seq (GSM3414775_summits.bed); putative gene: putative_TET2_E2_target_genes.bed
+         |                2.PR chip-seq (GSM1669090_summits.bed); putative gene:putative_PR_E2_target_genes.bed
+         |                3.PR peaks different from TET2 (no-E2_summits.bed) ; putative gene: putative_E2_diff_target_genes.bed
+MCF7 ----|                4.PR peaks same as TET2 (same_peak_noE2.bed); putative gene: putative_E2_same_target_genes.bed
+         |
+         |
