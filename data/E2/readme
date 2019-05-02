@@ -2,5 +2,5 @@ MCF7 ----|
          |
          -------- E2:     1.TET2 chip-seq (GSM3414769_summits.bed); putative gene: putative_TET2_noE2_target_genes.bed
                           2.PR chip-seq (GSM1669091_summits.bed); putative gene: putative_PR_noE2_target_genes.bed
-			                    3.PR peaks different from TET2 (E2_summits.bed); putative gene: putative_noE2_diff_target_genes.bed
-			                    4.PR peaks same as TET2 (same_peak_E2.bed); putative gene: putative_noE2_same_target_genes.bed
+			  3.PR peaks different from TET2 (E2_summits.bed); putative gene: putative_noE2_diff_target_genes.bed
+			  4.PR peaks same as TET2 (same_peak_E2.bed); putative gene: putative_noE2_same_target_genes.bed
