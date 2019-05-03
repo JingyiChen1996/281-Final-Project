@@ -1,0 +1,191 @@
+---
+title: "Stat 115 2019: Homework 4"
+author: "(your name)"
+date: "Due: March 31, 2019 at 11:59pm"
+output: html_document
+---
+```{r setup}
+knitr::opts_knit$set(root.dir = 'D:/BST281/final/data')
+```
+
+```{r, eval=FALSE}
+# Install required packages
+```
+
+```{r libraries, message = FALSE}
+library(dplyr)
+
+```
+
+
+```{r, read data}
+PR_E2 <- read.delim('../data/GSM1669091_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+PR_noE2 <- read.delim('../data/GSM1669090_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+
+TET2_E2 <- read.delim('../data/GSM3414769_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+TET2_noE2 <- read.delim('../data/GSM3414775_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+
+colnames(PR_noE2) <- c('chrom','start','end', 'peak_name','score')
+colnames(PR_E2) <- c('chrom','start','end', 'peak_name','score')
+colnames(TET2_noE2) <- c('chrom','start','end', 'peak_name','score')
+colnames(TET2_E2) <- c('chrom','start','end', 'peak_name','score')
+
+write.csv(PR_E2, '../data/GSM1669091_summits.csv',quote=FALSE, row.names=FALSE)
+write.csv(PR_noE2, '../data/GSM1669090_summits.csv',quote=FALSE, row.names=FALSE)
+
+write.csv(TET2_E2, '../data/GSM3414769_summits.csv',quote=FALSE, row.names=FALSE)
+write.csv(TET2_noE2, '../data/GSM3414775_summits.csv',quote=FALSE, row.names=FALSE)
+```
+
+```{r, find common peaks}
+diff_E2 <- read.delim('../data/E2_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+diff_noE2 <- read.delim('../data/no-E2_summits.bed', sep='\t',header = FALSE,stringsAsFactors=FALSE)
+colnames(diff_E2) <- c('chrom','start','end', 'peak_name','score')
+colnames(diff_noE2) <- c('chrom','start','end', 'peak_name','score')
+
+
+# Find common peaks by seeing which PR chip seq peaks appears in TET2 chip seq peaks
+# if starting site of PR peaks is within 200 kb range of a TET2 peak starting site, then we consider them to be overlapping. 
+
+find_same_peaks <- function(PR, diff,cutoff){
+  same_idx <- c()
+  
+  for (i in 1:nrow(PR)){
+    for (j in 1:nrow(diff)){
+      if (PR[i,1] == diff[j,1] & PR[i,2] %in% seq(diff[j,2]-cutoff,diff[j,2]+cutoff)){
+      same_idx <- c(same_idx, i)
+      break
+      }
+    }
+  }
+same_idx
+}
+
+diff_peak_E2_idx <- find_same_peaks(PR_E2, diff_E2,100)
+same_E2_idx <- setdiff(seq(1,nrow(PR_E2)), diff_peak_E2_idx)
+same_peak_E2 <- PR_E2[same_E2_idx,]
+
+
+diff_peak_noE2_idx <- find_same_peaks(PR_noE2, diff_noE2,100)
+same_noE2_idx <- setdiff(seq(1,nrow(PR_noE2)), diff_peak_noE2_idx)
+same_peak_noE2 <- PR_noE2[same_noE2_idx,]
+
+#write.csv(same_peak_E2, '../data/same_peak_E2.csv',quote=FALSE, col.names = FALSE,row.names=FALSE)
+#write.csv(same_peak_noE2, '../data/same_peak_noE2.csv',quote=FALSE, col.names = FALSE, row.names=FALSE)
+
+write.table(same_peak_E2, '../data/same_peak_E2.bed',quote=FALSE, col.names = FALSE,row.names=FALSE,sep='\t')
+write.table(same_peak_noE2, '../data/same_peak_noE2.bed',quote=FALSE, col.names = FALSE, row.names=FALSE,sep='\t')
+```
+
+```{Find ChIP-seq motifs}
+using weeder: http://159.149.160.88/pscan_chip_dev/
+
+Here only same_peak_E2 and same_peak_noE2 are put into weeder to find motifs, but one can use the PR peaks and TET2 peaks under two conditions to find PR/TET2 motifs as well.
+```
+
+```{bash, Find putative gene,eval=FALSE }
+srun --pty -p test -t 0-5:00 --mem 10000 /bin/bash
+module load centos6/0.0.1-fasrc01
+module load bedtools/2.17.0-fasrc01
+
+bedtools window  -w 3000 -u -a TSS_HG38.bed -b GSM1669091_summits.bed > ./result/putative_PR_E2_target_genes.bed
+
+bedtools window  -w 3000 -u -a TSS_HG38.bed -b GSM1669090_summits.bed > ./result/putative_PR_noE2_target_genes.bed
+
+bedtools window  -w 3000 -u -a TSS_HG38.bed -b GSM3414775_summits.bed > ./result/putative_TET2_noE2_target_genes.bed
+
+ bedtools window  -w 3000 -u -a TSS_HG38.bed -b GSM3414769_summits.bed > ./result/putative_TET2_E2_target_genes.bed
+ 
+ bedtools window  -w 3000 -u -a TSS_HG38.bed -b E2_summits.bed > ./result/putative_E2_diff_target_genes.bed
+ 
+  bedtools window  -w 3000 -u -a TSS_HG38.bed -b no-E2_summits.bed > ./result/putative_noE2_diff_target_genes.bed
+  
+  bedtools window  -w 3000 -u -a TSS_HG38.bed -b same_peak_noE2.bed > ./result/putative_noE2_same_target_genes.bed
+  
+   bedtools window  -w 3000 -u -a TSS_HG38.bed -b same_peak_E2.bed > ./result/putative_E2_same_target_genes.bed
+```
+
+
+```{r, convert putative genes in bed format to csv}
+## genes that are targeted by overlaping peaks between PR and TET2 under E2 condition
+same_peak_E2 <- read.table('../data/result/putative_E2_same_target_genes.bed',header=FALSE)
+colnames(same_peak_E2) <- c('chr','start','end','strand','id')
+write.csv(same_peak_E2$id, '../data/result/putative_E2_same_target_genes.csv',quote=FALSE, row.names=FALSE)
+
+## genes that are targeted by overlaping peaks between PR and TET2 under no E2 condition
+same_peak_noE2 <- read.table('../data/result/putative_noE2_same_target_genes.bed',header=FALSE)
+colnames(same_peak_noE2) <- c('chr','start','end','strand','id')
+write.csv(same_peak_noE2$id, '../data/result/putative_noE2_same_target_genes.csv',quote=FALSE, row.names=FALSE)
+
+## PR regulated genes under E2 condition
+PR_peak_E2 <- read.table('../data/result/putative_PR_E2_target_genes.bed',header=FALSE)
+colnames(PR_peak_E2) <- c('chr','start','end','strand','id')
+write.csv(PR_peak_E2$id, '../data/result/putative_PR_E2_target_genes.csv',quote=FALSE, row.names=FALSE)
+
+## PR regulated genes no E2 condition
+PR_peak_noE2 <- read.table('../data/result/putative_PR_noE2_target_genes.bed',header=FALSE)
+colnames(PR_peak_noE2) <- c('chr','start','end','strand','id')
+write.csv(PR_peak_noE2$id, '../data/result/putative_PR_noE2_target_genes.csv',quote=FALSE, row.names=FALSE)
+
+## Genes near TET2 bidning region under E2 condtion
+TET2_peak_E2 <- read.table('../data/result/putative_TET2_E2_target_genes.bed',header=FALSE)
+colnames(TET2_peak_E2) <- c('chr','start','end','strand','id')
+write.csv(TET2_peak_E2$id, '../data/result/putative_TET2_E2_target_genes.csv',quote=FALSE, row.names=FALSE)
+
+## Genes near TET2 binding region under no E2 condition
+TET2_peak_noE2 <- read.table('../data/result/putative_TET2_noE2_target_genes.bed',header=FALSE)
+colnames(TET2_peak_noE2) <- c('chr','start','end','strand','id')
+write.csv(TET2_peak_noE2$id, '../data/result/putative_TET2_noE2_target_genes.csv',quote=FALSE, row.names=FALSE)
+```
+
+```{David }
+ALL 6 putative genes files can be analyzed using David:
+  1. what GO/pathways are enriched in the genes regulated by TET2 and PR together under E2 condition?
+     use putative_E2_same_target_genes.csv
+
+  2.what GO/pathways are enriched in the genes regulated by TET2 and PR together under no E2 condition?
+    use putative_noE2_same_target_genes.csv
+  
+  3. what GO/pathways are enriched in the genes regulated by TET2 under E2 condition?
+    use putative_TET2_E2_target_genes.csv
+  
+  4. what GO/pathways are enriched in the genes regulated by TET2 under no E2 condition?
+    use putative_TET2_noE2_target_genes.csv
+    
+  5. what GO/pathways are enriched in the genes regulated by PR under E2 condition?
+    use putative_PR_E2_target_genes.csv
+  
+  6. what GO/pathways are enriched in the genes regulated by PR under no E2 condition?
+    use putative_PR_noE2_target_genes.csv
+```
+
+```{r }
+library(biomaRt) #installation through bioconductor
+
+# database containing ensembl id of human genome
+ensembl<-  useMart("ensembl", dataset="hsapiens_gene_ensembl")
+
+# up and down regulated genes in MCF7 cells with or without E2
+up_regulated <- read.csv('../data/Up.csv')
+colnames(up_regulated) <- c('idx', 'ensembl_gene_id')
+down_regulated <- read.csv('../data/Down.csv')
+colnames(down_regulated) <- c('idx', 'ensembl_gene_id')
+
+#convert ensembl id to refseq id for up/down regulated genes in MCF7 cells under E2 and no E2 condition
+same_peak_E2_ensembl <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id"), filters = "refseq_mrna", values = same_peak_E2$id, mart= ensembl)
+
+same_peak_noE2_ensembl <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id"), filters = "refseq_mrna", values = same_peak_noE2$id, mart= ensembl)
+
+# Find overlapping genes between up/down regulated genes and TET2+PR regulated genes
+overlap_E2_up <- merge(same_peak_E2_ensembl, up_regulated, by = 'ensembl_gene_id')
+overlap_E2_down <- merge(same_peak_E2_ensembl, down_regulated, by = 'ensembl_gene_id')
+
+overlap_noE2_up <- merge(same_peak_noE2_ensembl, up_regulated, by = 'ensembl_gene_id')
+overlap_noE2_down <- merge(same_peak_noE2_ensembl, down_regulated, by = 'ensembl_gene_id')
+
+nrow(overlap_E2_up)
+nrow(overlap_E2_down)
+
+nrow(overlap_noE2_up)
+nrow(overlap_noE2_down)
+```
