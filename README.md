@@ -23,22 +23,29 @@ Here only same_peak_E2 and same_peak_noE2 are put into weeder to find motifs, bu
 **2. Finding enriched GO/Pathway**
 
 ALL 6 putative genes files can be analyzed using David:
+
   1. what GO/pathways are enriched in the genes regulated by TET2 and PR together under E2 condition?
+  
      use putative_E2_same_target_genes.csv
 
   2.what GO/pathways are enriched in the genes regulated by TET2 and PR together under no E2 condition?
+  
     use putative_noE2_same_target_genes.csv
   
   3. what GO/pathways are enriched in the genes regulated by TET2 under E2 condition?
+  
     use putative_TET2_E2_target_genes.csv
   
   4. what GO/pathways are enriched in the genes regulated by TET2 under no E2 condition?
+  
     use putative_TET2_noE2_target_genes.csv
     
   5. what GO/pathways are enriched in the genes regulated by PR under E2 condition?
+  
     use putative_PR_E2_target_genes.csv
   
   6. what GO/pathways are enriched in the genes regulated by PR under no E2 condition?
+  
     use putative_PR_noE2_target_genes.csv
     
 **3. Finding genes that are both regulated by PR+TET2 and are differentially expressed in two conditions.**
